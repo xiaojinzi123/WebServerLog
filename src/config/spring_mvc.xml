@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/mvc  
+        http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd">
+
+    <!-- 配置mvc中返回的视图 -->
+    <bean
+            class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/views/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+
+
+    <!-- 通过注解，把URL映射到Controller上，该标签默认注册RequestMappingHandlerMapping和RequestMappingHandlerAdapter -->
+    <mvc:annotation-driven/>
+
+    <!--拦截器-->
+    <!--<mvc:interceptors>-->
+    <!-- 使用bean定义一个Interceptor，直接定义在mvc:interceptors根下面的Interceptor将拦截所有的请求 -->
+    <!--<bean class="com.xiaojinzi.code.app.interceptor.AppTokenInterceptor"/>-->
+    <!-- <mvc:interceptor> -->
+    <!-- <mvc:mapping path="/test/number.do" /> -->
+    <!-- 定义在mvc:interceptor下面的表示是对特定的请求才进行拦截的 -->
+    <!-- <bean class="com.host.app.web.interceptor.LoginInterceptor" /> -->
+    <!-- </mvc:interceptor> -->
+    <!--</mvc:interceptors>-->
+
+</beans>

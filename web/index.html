@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Android NetWotk Log</title>
+
+    <link href="./jsonThemes/jsoneditor.css" rel="stylesheet" type="text/css">
+    <script src="./jsonThemes/jsoneditor.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="./themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="./themes/icon.css">
+    <script type="text/javascript" src="./jquery.min.js"></script>
+    <script type="text/javascript" src="./jquery.easyui.min.js"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <style type="text/css">
+        * {
+            padding: 0;
+            margin: 0;
+            word-wrap: break-word;
+        }
+
+        #req_jsoneditor {
+            width: 100%;
+            height: 100%;
+        }
+
+        #res_jsoneditor {
+            width: 100%;
+            height: 100%;
+        }
+
+        .demo_text {
+            font-size: 18px;
+        }
+
+        .res_protocol_span {
+            font-size: 18px;
+            color: blue;
+        }
+
+        .res_message_span {
+            margin-left: 20px;
+            font-size: 18px;
+            color: blue;
+        }
+
+        .res_code_span {
+            margin-left: 20px;
+            font-size: 18px;
+            color: blue;
+        }
+
+        .res_header_span {
+            font-size: 18px;
+        }
+
+        .res_body_span {
+            font-size: 18px;
+        }
+
+        .req_method_span {
+            font-size: 18px;
+            color: blue;
+        }
+
+        .req_url_span {
+            margin-left: 20px;
+            font-size: 18px;;
+            color: blue;
+        }
+
+        .req_protocol_span {
+            margin-left: 20px;;
+            font-size: 18px;;
+            color: blue;
+        }
+
+        .req_header_span {
+            font-size: 18px;
+        }
+
+        .req_body_span {
+            font-size: 18px;
+        }
+
+        .li_req_url {
+            margin-bottom: 10px;
+        }
+
+        .a_req_url {
+            font-size: 16px;
+        }
+
+
+    </style>
+</head>
+<a href="www.baidu.com" name="www.baidu.com"></a>
+<body style="width: 100%">
+<div class="easyui-layout" style="width:100%;height:900px;">
+    <!--上面的-->
+    <div data-options="region:'north'" style="height:90px">
+
+        <span style="margin-left: 20px;line-height: 50px;font-size: 18px">state:</span>
+        <span style="margin-left: 4px;line-height: 50px;font-size: 18px" id="socketState">unKnow</span>
+
+        <select id="type_tag" style="margin-left: 10px;width: 120px;" onchange="onTypeTagChange(this)">
+            <option value='network'>network</option>
+        </select>
+        <select id="device_tag" style="margin-left: 10px;width: 240px;" onchange="onDeviceTagChange(this)">
+        </select>
+
+        <span style="margin-left: 10px;font-size: 16px">过滤：</span><input id="filter_info" style="width: 300px;"
+                                                                         class="easyui-textbox"
+                                                                         data-options="prompt:'Enter a key for filter url...'"
+                                                                         type="text" value=""/>
+        <a style="margin-left: 10px;font-size: 16px" onclick="clearMessage()" class="easyui-linkbutton"
+           data-options="iconCls:'icon-clear'">清除</a>
+        <span style="margin-left: 20px;line-height: 50px;font-size: larger;alignment: center;font-size: 16px">Network Log Output( 'network' 这个字符串是默认的type)</span>
+
+        <div>
+            <span style="margin-left: 20px;font-size: 16px">类型：</span>
+            <span id="type_tag_value" style="font-size: 16px">network</span>
+
+            <span style="margin-left: 10px;font-size: 16px">设备：</span>
+            <span id="device_tag_value" style="font-size: 16px">暂无</span>
+        </div>
+
+    </div>
+
+    <div data-options="region:'south',split:true" style="height:50px;"></div>
+    <!-- 右边的-->
+    <!--<div data-options="region:'east',split:true" title="East" style="width:180px;"></div>-->
+    <!--左边的-->
+    <div data-options="region:'west',split:true" title="请求地址" style="width:400px;padding: 10px">
+
+        <!--显示所有的请求地址-->
+        <ul id="urls_ul">
+        </ul>
+
+    </div>
+    <!--中间的-->
+    <div data-options="region:'center',iconCls:'icon-ok'" class="easyui-tabs" style="width:700px;height:250px">
+        <div title="raw" id="network_detail_div" style="padding:10px">
+            <span class="demo_text">这里会显示整个完成的信息</span>
+        </div>
+        <div title="请求详情" id="req_detail_div" style="padding:10px">
+            <span class="demo_text">这里会显示请求的详情</span>
+        </div>
+        <div title="响应详情" id="res_detail_div" style="padding:10px">
+            <span class="demo_text">这里会显示响应的详情</span>
+        </div>
+        <div title="Json请求body" style="padding:10px">
+            <div id="req_jsoneditor"></div>
+        </div>
+        <div title="Json响应body" style="padding:10px">
+            <div id="res_jsoneditor"></div>
+        </div>
+    </div>
+</div>
+</div>
+</body>
+
+<script type="text/javascript">
+
+</script>
+
+<script type="text/javascript">
+
+    // 初始化json解析器的
+
+    // create the editor
+    var container_req = document.getElementById('req_jsoneditor');
+    var container_res = document.getElementById('res_jsoneditor');
+    var options = {};
+    var editor_req = new JSONEditor(container_req, options);
+    var editor_res = new JSONEditor(container_res, options);
+
+    // ===================
+
+    function showJson(json) {
+
+        var network_detail_div = document.getElementById("network_detail_div");
+        network_detail_div.innerHTML = "";
+
+        // 1.显示请求详情
+        var req_detail_div = document.getElementById("req_detail_div");
+        req_detail_div.innerHTML = "";
+        var req_wrap_div = document.createElement("div");
+
+        var req_method_span = document.createElement("span");
+        req_method_span.setAttribute("class", "req_method_span");
+        req_method_span.innerText = json.req_method;
+
+        var req_url_span = document.createElement("span");
+        req_url_span.setAttribute("class", "req_url_span");
+        req_url_span.innerText = decodeURIComponent(json.req_url);
+
+        var req_protocol_span = document.createElement("span");
+        req_protocol_span.setAttribute("class", "req_protocol_span");
+        req_protocol_span.innerText = "HTTP/1.1";
+
+        req_wrap_div.appendChild(req_method_span);
+        req_wrap_div.appendChild(req_url_span);
+        req_wrap_div.appendChild(req_protocol_span);
+
+        // 显示请求header和请求Body
+        req_wrap_div.appendChild(document.createElement("br"));
+
+        var req_headers = json.req_headers;
+        if (req_headers != null) {
+            var headerLength = req_headers.length;
+            for (var i = 0; i < headerLength; i++) {
+                var header_span = document.createElement("span");
+                header_span.innerText = decodeURIComponent(req_headers[i]);
+                header_span.setAttribute("class", "req_header_span");
+                req_wrap_div.appendChild(header_span);
+                req_wrap_div.appendChild(document.createElement("br"));
+            }
+        }
+
+        req_wrap_div.appendChild(document.createElement("br"));
+
+        // show request body
+        var req_body = json.req_body;
+        var real_req_body = "";
+        if (req_body != null) {
+            var req_body_span = document.createElement("span");
+            req_body = JSON.stringify(req_body);
+            for (var i = 0; i < req_body.length; i++) {
+                if (req_body.charAt(i) == '\\' && i != req_body.length - 1 && req_body.charAt(i + 1) == '\"') {
+                } else {
+                    real_req_body += req_body.charAt(i);
+                }
+            }
+            if (real_req_body.charAt(0) == '\"' && real_req_body.charAt(real_req_body.length - 1) == '\"') {
+                real_req_body = real_req_body.substr(1, real_req_body.length - 2);
+            }
+            req_body_span.innerText = real_req_body;
+            req_body_span.setAttribute("class", "req_body_span");
+            req_wrap_div.appendChild(req_body_span);
+        }
+
+        req_detail_div.appendChild(req_wrap_div);
+        network_detail_div.innerHTML += req_detail_div.innerHTML;
+
+        network_detail_div.innerHTML += "<br/>";
+
+        // 2.显示响应的详情
+
+        var res_detail_div = document.getElementById("res_detail_div");
+        res_detail_div.innerHTML = "";
+        var res_wrap_div = document.createElement("div");
+
+        var res_protocol_span = document.createElement("span");
+        res_protocol_span.setAttribute("class", "res_protocol_span");
+        res_protocol_span.innerText = "HTTP/1.1";
+
+        var res_message_span = document.createElement("span");
+        res_message_span.setAttribute("class", "res_message_span");
+        res_message_span.innerText = (json.res_message == null || json.res_message.length == 0) ? "null" : json.res_message;
+
+        var res_code_span = document.createElement("span");
+        res_code_span.setAttribute("class", "res_code_span");
+        res_code_span.innerText = json.res_code;
+
+        res_wrap_div.appendChild(res_protocol_span);
+        res_wrap_div.appendChild(res_message_span);
+        res_wrap_div.appendChild(res_code_span);
+        res_wrap_div.appendChild(document.createElement("br"));
+
+        var res_headers = json.res_headers;
+        if (res_headers != null) {
+            var headerLength = res_headers.length;
+            for (var i = 0; i < headerLength; i++) {
+                var header_span = document.createElement("span");
+                header_span.innerText = res_headers[i];
+                header_span.setAttribute("class", "res_header_span");
+                res_wrap_div.appendChild(header_span);
+                res_wrap_div.appendChild(document.createElement("br"));
+            }
+        }
+
+        res_wrap_div.appendChild(document.createElement("br"));
+        var res_body_span = document.createElement("span");
+        res_body_span.innerText = json.res_body;
+        res_body_span.setAttribute("class", "res_body_span");
+        res_wrap_div.appendChild(res_body_span)
+
+        res_detail_div.appendChild(res_wrap_div);
+        network_detail_div.innerHTML += res_wrap_div.innerHTML;
+
+        // 显示请求body的json格式和响应body的json格式
+        editor_req.set(eval('(' + json.req_body + ')'));
+        editor_res.set(eval('(' + json.res_body + ')'));
+
+    }
+
+    /**
+     * type_tag的列表改变的时候
+     * @param selectLabel
+     */
+    function onTypeTagChange(selectLabel) {
+        document.getElementById("type_tag_value").innerHTML = selectLabel.children[selectLabel.selectedIndex].getAttribute("value");
+    }
+
+    /**
+     * 设备的列表改变的时候
+     * @param selectLabel
+     */
+    function onDeviceTagChange(selectLabel) {
+        document.getElementById("device_tag_value").innerHTML = selectLabel.children[selectLabel.selectedIndex].getAttribute("value");
+    }
+
+    function clearMessage() {
+        document.getElementById("urls_ul").innerHTML = "";
+    }
+
+    function getUrl(url) {
+        var index = url.indexOf("?");
+        if (index > -1) {
+            return url.substring(0, index);
+        } else {
+            return url;
+        }
+    }
+
+    var websocket = null;
+
+    //判断当前浏览器是否支持WebSocket
+    if ('WebSocket' in window) {
+        websocket = new WebSocket("ws://192.168.5.105:8080/serverLog/websocket");
+    } else {
+        alert('当前浏览器 Not support websocket')
+    }
+
+    //连接发生错误的回调方法
+    websocket.onerror = function () {
+        document.getElementById('socketState').innerText = "WebSocket连接发生错误";
+    };
+
+    //连接成功建立的回调方法
+    websocket.onopen = function () {
+        document.getElementById('socketState').innerText = "连接成功";
+    }
+
+    websocket.onclose = function () {
+        document.getElementById('socketState').innerText = "连接关闭";
+    }
+
+    // 接收到消息的回调方法
+    websocket.onmessage = function (event) {
+
+        var wrapJson = JSON.parse(event.data);
+
+        if (wrapJson.tag == null) {
+            return;
+        }
+
+        // 拿到设备tag 和 显示的类型的tag
+        var device_tag = wrapJson.device_tag;
+        var type_tag = wrapJson.tag;
+
+        var device_tag_value = document.getElementById("device_tag_value");
+        var type_tag_value = document.getElementById("type_tag_value");
+        var deviceTag_select = document.getElementById("device_tag");
+        var typeTag_select = document.getElementById("type_tag");
+        var deviceTagSize = deviceTag_select.children.length;
+        var typeTagSize = typeTag_select.children.length;
+
+        // 没有tag就不显示
+        if (device_tag == null || type_tag == null) {
+            return;
+        }
+
+        // device_tag去重
+        var isAddDeviceTag = true;
+        for (var i = 0; i < deviceTagSize; i++) {
+            if (device_tag == deviceTag_select.children[i].innerHTML) {
+                isAddDeviceTag = false;
+                break;
+            }
+        }
+        if (isAddDeviceTag) { // 如果是一个新的设备tag,就加入到列表中,并且判断列表的长度,如果是0,就直接选中这个
+            var selectIndex = -1;
+            if (deviceTagSize == 0) {
+                device_tag_value.innerHTML = device_tag;
+            }else {
+                selectIndex = deviceTag_select.selectedIndex;
+            }
+            deviceTag_select.innerHTML += "<option value='" + device_tag + "'>" + device_tag + "</option>";
+            if(selectIndex > -1){
+                deviceTag_select.selectedIndex = selectIndex;
+            }
+        }
+
+        // type_tag去重
+        var isAddTypeTag = true;
+        for (var i = 0; i < typeTagSize; i++) {
+            if (type_tag == typeTag_select.children[i].innerHTML) {
+                isAddTypeTag = false;
+                break;
+            }
+        }
+        if (isAddTypeTag) {
+            var selectIndex = -1;
+            if (typeTagSize == 0) {
+                type_tag_value.innerHTML = type_tag;
+            }else {
+                selectIndex = typeTag_select.selectedIndex;
+            }
+            typeTag_select.innerHTML += "<option value='" + type_tag + "'>" + type_tag + "</option>";
+            if(selectIndex > -1){
+                typeTag_select.selectedIndex = selectIndex;
+            }
+        }
+
+        // 根据设备tag和type_tag过滤
+        if (device_tag != device_tag_value.innerHTML || type_tag != type_tag_value.innerHTML) {
+            return;
+        }
+
+        var json = wrapJson.data;
+
+        // 过滤信息过滤
+        var filterInfo = document.getElementById("filter_info").value;
+        //document.getElementById('socketState').innerText = filterInfo;
+
+        // 如果在请求的路径中没有找到了,说明这个请求不应该展示
+        if (filterInfo == null || filterInfo == "") {
+        } else {
+            if (decodeURIComponent(json.req_url).toString().indexOf(filterInfo) < 0) {
+                return;
+            }
+        }
+
+        var req_url_li = document.createElement("li");
+        req_url_li.setAttribute("class", "li_req_url");
+        var req_url_a = document.createElement("a");
+        req_url_a.href = "#";
+        req_url_a.innerText = json.req_method + "\t" + getUrl(decodeURIComponent(json.req_url));
+        req_url_a.setAttribute("class", "a_req_url");
+        req_url_a.onclick = function (ev) {
+            showJson(json);
+        }
+        req_url_li.appendChild(req_url_a);
+
+        var urls_ul = document.getElementById("urls_ul");
+        if (urls_ul.children == null || urls_ul.children.length == 0) {
+            urls_ul.appendChild(req_url_li);
+        } else {
+            urls_ul.insertBefore(req_url_li, urls_ul.firstChild);
+        }
+
+    }
+
+    // 连接关闭的回调方法
+    websocket.onclose = function () {
+        document.getElementById('socketState').innerText = "WebSocket连接关闭";
+    }
+
+    //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+    window.onbeforeunload = function () {
+        closeWebSocket();
+    }
+
+    //关闭WebSocket连接
+    function closeWebSocket() {
+        websocket.close();
+    }
+
+</script>
+
+</html>
